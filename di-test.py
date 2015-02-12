@@ -5,7 +5,7 @@ import di
 class testDI(unittest.TestCase):
 
 	def setUp(self):
-		pass
+		di.clear()
 
 	def testServiceSingletone(self):
 		# di.Service should be singletone!

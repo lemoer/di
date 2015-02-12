@@ -50,6 +50,13 @@ def inject(featureName):
 
 	return instance
 
+def clear():
+	global features
+	global staticInstances
+
+	features = {}
+	staticInstances = {}
+
 # Singletone
 class Service(object):
 	@staticmethod
