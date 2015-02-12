@@ -39,7 +39,8 @@ class testDI(unittest.TestCase):
 		self.assertEqual(dictionary["Val1"].get(), 123)
 		self.assertEqual(dictionary["Val2"].get(), 234)
 
-		emptyList = self.di.inject("Config/*")
+		emptyList = self.di.inject("Another/*")
+		self.assertIs(type(emptyList), dict)
 		self.assertEqual(len(emptyList), 0)
 
 	def testList(self):
@@ -47,7 +48,7 @@ class testDI(unittest.TestCase):
 		l = di.List()
 		
 		self.assertIsNot(l.get(), None)
-		self.assertIs(l.get(), list)
+		self.assertIs(type(l.get()), list)
 
 		l.add('TestStr')
 
@@ -57,8 +58,7 @@ class testDI(unittest.TestCase):
 		# The type of an empty di.Dict should be dict not None
 		l = di.Dict()
 
-		self.assertIsNot(l.get(), None)
-		self.assertIs(l.get(), dict)
+		self.assertIs(type(l.get()), dict)
 
 		l.put('test', 'val')
 
