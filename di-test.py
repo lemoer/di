@@ -25,7 +25,7 @@ class testDI(unittest.TestCase):
 
 		self.assertIsNot(c1, c2)
 
-	def testWildcard(self):
+	def testWildcards(self):
 		# Wildcards (*) at the end should return a list.
 
 		di.implements(123, "Config/Val1")
@@ -39,6 +39,13 @@ class testDI(unittest.TestCase):
 		emptyList = di.inject("Another/*")
 		self.assertIs(type(emptyList), dict)
 		self.assertEqual(len(emptyList), 0)
+
+	def testNotImplemented(self):
+
+		with self.assertRaises(di.NotImplemented) as test:
+			di.inject("TestFeature")
+
+		self.assertEqual(test.exception.featureName, "TestFeature")
 
 if __name__ == '__main__':
 	unittest.main()

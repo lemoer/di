@@ -14,6 +14,23 @@ def implements(feature, featureName):
 	if type(feature) is not type:
 		staticInstances[featureName] = feature
 
+def __injectWildcard(featureName):
+	reStr = '^' + featureName[:-1] + '(.*)$'
+	reCompiled = re.compile(reStr)
+
+	result = {}
+	for key, val in features.items():
+		reMatch = reCompiled.match(key)
+		
+		if reMatch is None:
+			continue
+		
+		key = reMatch.group(1)
+		longKey = featureName[:-1] + key
+		result[key] = inject(longKey)
+
+	return result
+
 
 def inject(featureName):
 	global features
@@ -21,34 +38,24 @@ def inject(featureName):
 
 	# Wildcards
 	if featureName[-1] == "*":
-		reStr = '^' + featureName[:-1] + '(.*)$'
-		reCompiled = re.compile(reStr)
-
-		result = {}
-		for key, val in features.items():
-			reMatch = reCompiled.match(key)
-			
-			if reMatch is None:
-				continue
-			
-			key = reMatch.group(1)
-			longKey =featureName[:-1] + key
-			result[key] = inject(longKey)
-
-		return result
+		return __injectWildcard(featureName)
 
 	# Check for an existing service instance
 	if featureName in staticInstances.keys():
 		return staticInstances[featureName]
 
-	classType = features[featureName]
-	instance = classType()
+	# Create the feature
+	if featureName in features.keys():
+		classType = features[featureName]
+		instance = classType()
 
-	# If the class is a service save the instance
-	if classType.isStatic():
-		staticInstances[featureName] = instance
+		# If the class is a service save the instance
+		if classType.isStatic():
+			staticInstances[featureName] = instance
 
-	return instance
+		return instance
+
+	raise NotImplemented(featureName)
 
 def clear():
 	global features
@@ -68,3 +75,11 @@ class Controller(object):
 	@staticmethod
 	def isStatic():
 		return False
+
+# Exceptions
+
+class NotImplemented(RuntimeError):
+
+	def __init__(self, featureName):
+		
+		self.featureName = featureName
