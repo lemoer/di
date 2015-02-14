@@ -14,31 +14,39 @@ def implements(feature, featureName):
 	if type(feature) is not type:
 		staticInstances[featureName] = feature
 
-def __injectWildcard(featureName):
-	reStr = '^' + featureName[:-1] + '(.*)$'
+def __isWildcard(string):
+	return string[-1] == "*"
+
+def __filterBegin(dictionary, begin):
+	reStr = '^' + begin + '(.*)$'
 	reCompiled = re.compile(reStr)
 
-	result = {}
-	for key, val in features.items():
+	for key, val in dictionary.items():
 		reMatch = reCompiled.match(key)
-		
+
 		if reMatch is None:
 			continue
-		
+
 		key = reMatch.group(1)
-		longKey = featureName[:-1] + key
-		result[key] = inject(longKey)
-
-	return result
-
+		yield (key, val)
 
 def inject(featureName):
 	global features
 	global staticInstances
 
 	# Wildcards
-	if featureName[-1] == "*":
-		return __injectWildcard(featureName)
+	if __isWildcard(featureName):
+
+		# Remove the *
+		path = featureName[:-1] 
+		
+		result = {}
+		for key, val in __filterBegin(features, path):
+
+			# use recursion
+			result[key] = inject(path + key) 
+
+		return result
 
 	# Check for an existing service instance
 	if featureName in staticInstances.keys():
