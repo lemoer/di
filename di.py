@@ -17,18 +17,18 @@ def implements(feature, featureName):
 def __isWildcard(string):
 	return string[-1] == "*"
 
-def __filterBegin(dictionary, begin):
+def __filterBegin(items, begin):
 	reStr = '^' + begin + '(.*)$'
 	reCompiled = re.compile(reStr)
 
-	for key, val in dictionary.items():
-		reMatch = reCompiled.match(key)
+	for i in items:
+		reMatch = reCompiled.match(i)
 
 		if reMatch is None:
 			continue
 
-		key = reMatch.group(1)
-		yield (key, val)
+		i = reMatch.group(1)
+		yield i
 
 def inject(featureName):
 	global features
@@ -41,7 +41,7 @@ def inject(featureName):
 		path = featureName[:-1] 
 		
 		result = {}
-		for key, val in __filterBegin(features, path):
+		for key in __filterBegin(features.keys(), path):
 
 			# use recursion
 			result[key] = inject(path + key) 
