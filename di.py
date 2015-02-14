@@ -3,16 +3,23 @@
 import re
 
 features = {}
+provider = {}
 staticInstances = {}
 
 def implements(feature, featureName):
 	global features
 	global staticInstances
 
-	features[featureName] = feature
-
+	# if the feature is an object it get's a static feature
 	if type(feature) is not type:
 		staticInstances[featureName] = feature
+
+	elif issubclass(feature, Provider):
+		provider[featureName] = feature
+		return
+
+	features[featureName] = feature
+
 
 def __isWildcard(string):
 	return string[-1] == "*"
@@ -83,6 +90,14 @@ class Controller(object):
 	@staticmethod
 	def isStatic():
 		return False
+
+class Provider(object):
+
+	def provideAll():
+		return []
+
+	def provideFeature(featureName):
+		raise NotImplemented
 
 # Exceptions
 

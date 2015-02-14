@@ -47,5 +47,17 @@ class testDI(unittest.TestCase):
 
 		self.assertEqual(test.exception.featureName, "TestFeature")
 
+	def testProvider(self):
+
+		class TestProvider(di.Provider):
+
+			def __init__(self):
+				super().__init()
+
+				self.features += ["feature1", "feature2"]
+
+			def provideFeature(featureName):
+				pass
+	
 if __name__ == '__main__':
 	unittest.main()
