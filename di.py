@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 
-import re
-
 def clear():
 	# TODO: Restart the di-lib
 	pass
@@ -83,7 +81,7 @@ class Context(object):
 
 	def subcontexts(self, path):
 		"""
-		
+
 		"""
 		path = Path(path)
 
