@@ -2,107 +2,182 @@
 
 import re
 
-features = {}
-provider = {}
-staticInstances = {}
-
-def implements(feature, featureName):
-	global features
-	global staticInstances
-
-	# if the feature is an object it get's a static feature
-	if type(feature) is not type:
-		staticInstances[featureName] = feature
-
-	elif issubclass(feature, Provider):
-		provider[featureName] = feature
-		return
-
-	features[featureName] = feature
-
-
-def __isWildcard(string):
-	return string[-1] == "*"
-
-def __filterBegin(items, begin):
-	reStr = '^' + begin + '(.*)$'
-	reCompiled = re.compile(reStr)
-
-	for i in items:
-		reMatch = reCompiled.match(i)
-
-		if reMatch is None:
-			continue
-
-		i = reMatch.group(1)
-		yield i
-
-def inject(featureName):
-	global features
-	global staticInstances
-
-	# Wildcards
-	if __isWildcard(featureName):
-
-		# Remove the *
-		path = featureName[:-1] 
-		
-		result = {}
-		for key in __filterBegin(features.keys(), path):
-
-			# use recursion
-			result[key] = inject(path + key) 
-
-		return result
-
-	# Check for an existing service instance
-	if featureName in staticInstances.keys():
-		return staticInstances[featureName]
-
-	# Create the feature
-	if featureName in features.keys():
-		classType = features[featureName]
-		instance = classType()
-
-		# If the class is a service save the instance
-		if classType.isStatic():
-			staticInstances[featureName] = instance
-
-		return instance
-
-	raise NotImplemented(featureName)
-
 def clear():
-	global features
-	global staticInstances
+	# TODO: Restart the di-lib
+	pass
 
-	features = {}
-	staticInstances = {}
+def implements(feature, path):
+	global rootContext
+	handler = rootContext.subcontexts(path)
+	handler[0].implements(feature, "")
 
-# Singletone
-class Service(object):
-	@staticmethod
-	def isStatic():
-		return True
+def inject(path):
+	global rootContext
+	path = Path(path)
 
-# Generates multiple instances die.
-class Controller(object):
-	@staticmethod
-	def isStatic():
-		return False
+	handler = rootContext.subcontexts(path)
+	#print(handler)
+
+	i = 0
+	for h in handler:
+		try:
+			return h.provide(path.last(i))
+		except NotImplemented:
+			pass
+
+		i += 1
+
+	raise NotImplemented(str(path))
+
+def context(path):
+	global rootContext
+	path = Path(path)
+	return rootContext.subcontexts(path)[0]
+
+class Context(object):
+
+	def __init__(self, parent=None, scope=""):
+		self.parent = parent
+		self.provider = None
+		self.children = {}
+		self.scope = Path(scope)
+
+	def inject(self, path="."):
+		return inject(self.scope.append(path))
+
+	def implements(self, feature, path="."):
+		path = Path(path)
+
+		if not path.match("."):
+			handler = self.subcontexts(path)
+			handler[0].implements(feature, "")
+			return
+
+		if issubclass(feature, Service):
+			self.provider = ServiceProvider(feature)
+		
+		if issubclass(feature, Controller):
+			self.provider = ControllerProvider(feature)
+
+		if issubclass(feature, Provider):
+			self.provider = feature()
+
+		# TODO implement
+
+	def provide(self, path):
+		if self.provider is None:
+			raise NotImplemented
+		else:
+			return self.provider.provide(path)
+
+	def subcontexts(self, path):
+		path = Path(path)
+
+		if path.empty():
+			return [self]
+		
+		subdir = path.first()
+
+		if subdir not in self.children.keys():
+			self.children[subdir] = Context(self, self.scope.append(subdir))
+
+		element = self.children[subdir]
+
+		return element.subcontexts(path.sub()) + [self]
+
+
+class Path(object):
+
+	def __init__(self, raw):
+		if isinstance(raw, Path):
+			self.data = raw.data
+		elif isinstance(raw, list):
+			self.data = raw
+		else:
+			self.data = raw.split("/")
+
+		if "." in self.data:
+			self.data.remove(".")
+		if "" in self.data:
+			self.data.remove("")
+
+	def __str__(self):
+		return "/".join(self.data)
+
+	def match(self, other):
+		other = Path(other)
+
+		return str(self) == str(other)
+
+	def first(self):
+		return self.data[0]
+
+	def last(self, n=0):
+		if n == 0:
+			return Path("")
+
+		return Path(self.data[-n:])
+
+	def sub(self):
+		return Path(self.data[1:])
+
+	def empty(self):
+		return len(self.data) == 0
+
+	def append(self, other):
+		other = Path(other)
+		return Path(self.data + other.data)
+
+
+class Feature(object):
+	pass
+
+class Service(Feature):
+	pass
+
+class Controller(Feature):
+	pass
 
 class Provider(object):
-
-	def provideAll():
-		return []
-
-	def provideFeature(featureName):
+	
+	def provide(self):
 		raise NotImplemented
+
+class ServiceProvider(Provider):
+
+	def __init__(self, service):
+		self.instance = None
+		self.service = service
+
+	def provide(self, path):
+
+		if not path.match("."):
+			raise NotImplemented
+
+		if self.instance is None:
+			self.instance = self.service()
+
+		return self.instance
+
+class ControllerProvider(Provider):
+
+	def __init__(self, controller):
+		self.controller = controller
+
+	def provide(self, path):
+
+		if not path.match("."):
+			raise NotImplemented
+
+		return self.controller()
+
 
 # Exceptions
 
 class NotImplemented(RuntimeError):
 
-	def __init__(self, featureName):
+	def __init__(self, featureName=""):
 		
 		self.featureName = featureName
+
+rootContext = Context()
