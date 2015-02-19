@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
 def clear():
-	# TODO: Restart the di-lib
+	global rootContext
+	rootContext = Context()
 	pass
 
 def implements(feature, path):
@@ -33,6 +34,9 @@ def inject(path):
 	raise NotImplemented(str(path))
 
 def context(path):
+	"""
+	A function to access a Context under a given path.
+	"""
 	global rootContext
 	path = Path(path)
 	return rootContext.subcontexts(path)[0]
@@ -71,9 +75,14 @@ class Context(object):
 		if issubclass(feature, Provider):
 			self.provider = feature()
 
-		# TODO implement
 
 	def provide(self, path):
+		"""
+		Should not be called from outside the library. This
+		function asks the provider (if there's one) for an
+		implementation of the feature under the relative path
+		specified by the variable named so.
+		"""
 		if self.provider is None:
 			raise NotImplemented
 		else:
@@ -81,7 +90,10 @@ class Context(object):
 
 	def subcontexts(self, path):
 		"""
-
+		Returns a list including the the hierarchy specified
+		in the path, beginning with the full path itself. The
+		parent of the path is the second element, following up
+		to this Context.
 		"""
 		path = Path(path)
 
@@ -192,4 +204,5 @@ class NotImplemented(RuntimeError):
 		
 		self.featureName = featureName
 
-rootContext = Context()
+# Initialize a new rootContext
+clear()
