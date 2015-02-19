@@ -12,13 +12,18 @@ def implements(feature, path):
 	handler[0].implements(feature, "")
 
 def inject(path):
+	"""
+	This function walks through the context tree to
+	the given path. As it found the certain node, it ask's
+	the context to provide the demanded feature.
+	"""
 	global rootContext
 	path = Path(path)
 
 	handler = rootContext.subcontexts(path)
-	#print(handler)
 
 	i = 0
+	# Walk trough the hierarchy (backwards)
 	for h in handler:
 		try:
 			return h.provide(path.last(i))
@@ -43,6 +48,12 @@ class Context(object):
 		self.scope = Path(scope)
 
 	def inject(self, path="."):
+		"""
+		The function walks from the rootContext
+		trough the tree, because if there is no Context that
+		can provide the feature below in the tree, the Contexts
+		above these might have an Provider for the feature.
+		"""
 		return inject(self.scope.append(path))
 
 	def implements(self, feature, path="."):
@@ -71,6 +82,9 @@ class Context(object):
 			return self.provider.provide(path)
 
 	def subcontexts(self, path):
+		"""
+		
+		"""
 		path = Path(path)
 
 		if path.empty():
