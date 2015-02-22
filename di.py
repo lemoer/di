@@ -3,7 +3,6 @@
 def clear():
 	global rootContext
 	rootContext = Context()
-	pass
 
 def implements(feature, path):
 	global rootContext
